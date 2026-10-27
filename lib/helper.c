@@ -285,16 +285,13 @@ int fuse_parse_cmdline_30(struct fuse_args *args,
 #ifdef __APPLE__
 static void fuse_darwin_atfork_prepare(void)
 {
-	if (pthread_is_threaded_np()) {
-		static const char warning[] =
-			"fuse: forking a threaded process is unsafe, the child "
-			"may crash or deadlock\n";
-		int saved_errno = errno;
-
-		/* Avoid stdio locks and custom log callbacks around fork. */
-		(void)write(STDERR_FILENO, warning, sizeof(warning) - 1);
-		errno = saved_errno;
-	}
+	/*
+	 * macFUSE performs part of its macOS mount/unmount coordination in a
+	 * helper process after the FUSE session has started its worker threads.
+	 * The generic warning therefore reports macFUSE's own fork as an
+	 * application error during normal unmount. Keep the atfork hook for ABI
+	 * compatibility, but do not emit that false-positive diagnostic.
+	 */
 }
 
 __attribute__((constructor))
